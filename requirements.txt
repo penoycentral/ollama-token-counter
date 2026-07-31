@@ -1,0 +1,8 @@
+# Ollama Token Counter Requirements
+# Note: ollama_token_counter.py uses standard library by default.
+
+# Optional: Official Ollama Python SDK (required if using example_ollama_sdk.py)
+ollama>=0.3.0
+
+# Optional: For exact BPE Token ID mappings in token breakdown
+tiktoken>=0.7.0
