@@ -34,29 +34,24 @@ pip install -r requirements.txt
 
 ---
 
-### 1. Interactive Mode (Default)
-Run the script without flags to enter interactive chat mode:
+### 1. Native Model Token Counter (Recommended)
+Run `ollama_native_token_counter.py` to use model-native tokenization via Ollama's `/api/tokenize` endpoint and model-aware BPE encodings, along with an explicit discrepancy analysis comparing prompt mapping against Ollama's evaluated prompt tokens (`prompt_eval_count`):
 
 ```bash
-python3 ollama_token_counter.py
-```
-Or specify a model:
-```bash
-python3 ollama_token_counter.py -m llama3.2
+# Interactive mode
+python3 ollama_native_token_counter.py
+
+# CLI mode with specific model and prompt
+python3 ollama_native_token_counter.py -m qwen2.5:14b -p "Explain quantum computing in 2 simple sentences."
 ```
 
 ---
 
-### 2. Single Prompt (CLI Mode)
-Pass your prompt and model directly via command-line flags:
+### 2. Standard Token Counter
+Run `ollama_token_counter.py` for standalone token and performance benchmarking:
 
 ```bash
 python3 ollama_token_counter.py -m llama3.2 -p "Explain quantum computing in 2 simple sentences."
-```
-
-Disable response streaming if you only want the final result and summary:
-```bash
-python3 ollama_token_counter.py -m llama3.2 -p "What is Rayleigh scattering?" --no-stream
 ```
 
 ---
@@ -68,6 +63,7 @@ If you prefer using `pip install ollama`:
 pip install ollama
 python3 example_ollama_sdk.py
 ```
+
 
 ---
 
@@ -140,7 +136,12 @@ Token #  | Token ID     | Token String Piece         | Char Len
 
 ## 💡 How Token Counting Works
 Ollama reports exact model statistics in its `/api/generate` and `/api/chat` endpoints:
-* **`prompt_eval_count`**: Number of tokens in your input prompt (processed during prefill phase).
+* **`prompt_eval_count`**: Total number of tokens processed during the prefill phase (includes your input prompt + Ollama model chat template tags, BOS/EOS tokens, and system prompts).
 * **`eval_count`**: Number of tokens generated in the output (generation phase).
 * **`prompt_eval_duration`**: Time spent evaluating the prompt (in nanoseconds).
 * **`eval_duration`**: Time spent generating tokens (in nanoseconds).
+
+### 🔍 Why Mapping Table Token Count May Differ from `prompt_eval_count`
+1. **Model Chat Templates**: Ollama automatically wraps prompts in model-specific control tags (e.g. `<|begin_of_text|>`, `<|start_header_id|>user<|end_header_id|>`), which adds extra tokens to `prompt_eval_count`.
+2. **Tokenizer Vocabulary**: Model-native tokenizers (used by Ollama and `ollama_native_token_counter.py`) split sub-words differently than general client encoders like `tiktoken` or whitespace splitters.
+
