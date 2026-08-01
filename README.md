@@ -145,4 +145,3 @@ Ollama reports exact model statistics in its `/api/generate` and `/api/chat` end
 ### 🔍 Why Mapping Table Token Count May Differ from `prompt_eval_count`
 1. **Model Chat Templates**: Ollama automatically wraps prompts in model-specific control tags (e.g. `<|begin_of_text|>`, `<|start_header_id|>user<|end_header_id|>`), which adds extra tokens to `prompt_eval_count`.
 2. **Tokenizer Vocabulary**: Model-native tokenizers (used by Ollama and `ollama_native_token_counter.py`) split sub-words differently than general client encoders like `tiktoken` or whitespace splitters.
-
