@@ -93,7 +93,8 @@ Response: Quantum computing uses the principles of quantum mechanics to process 
 | Parameter Size       : 14.8B                            |
 | Quantization Level   : Q4_K_M                           |
 | Vocabulary Size      : 151,646                          |
-| Context Length       : 32,768                           |
+| Max Context Window   : 32,768                           |
+| Default Ollama Ctx   : 2,048 tokens (num_ctx)           |
 +--------------------------------------------------------+
 | Input Character Length: 48 chars (7 words)              |
 | Input Tokens (Prompt)  : 39                             |
