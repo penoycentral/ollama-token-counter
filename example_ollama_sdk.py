@@ -23,9 +23,28 @@ def main():
         model_info = info.get('model_info', {})
 
         vocab_size = None
+        context_length = None
         for k, v in model_info.items():
             if k.endswith('.vocab_size'):
                 vocab_size = v
+            elif k.endswith('.context_length'):
+                context_length = v
+
+        # Determine training date / cutoff
+        training_date = "N/A"
+        for k, v in model_info.items():
+            if any(term in k.lower() for term in ["training_date", "created_at", "creation_date", "cutoff_date"]):
+                if v:
+                    training_date = str(v)
+                    break
+        if training_date == "N/A":
+            name_str = (model + " " + str(details.get("family", ""))).lower()
+            if "qwen2.5" in name_str:
+                training_date = "Sep 2024 (Cutoff: Sep 2024)"
+            elif "llama3.2" in name_str:
+                training_date = "Sep 2024 (Cutoff: Dec 2023)"
+            elif "llama3.1" in name_str:
+                training_date = "Jul 2024 (Cutoff: Dec 2023)"
 
         print(f"Model Name           : {model}")
         print(f"Architecture Family  : {details.get('family', 'N/A')}")
@@ -33,6 +52,11 @@ def main():
         print(f"Quantization Level   : {details.get('quantization_level', 'N/A')}")
         if vocab_size:
             print(f"Vocabulary Size      : {vocab_size:,}")
+        if training_date != "N/A":
+            print(f"Training Date        : {training_date}")
+        if context_length:
+            max_words = int(context_length * 0.75)
+            print(f"Max Context Window   : {context_length:,} tokens (~{max_words:,} words)")
         print("-" * 50)
     except Exception as e:
         print(f"Could not fetch metadata for {model}: {e}\n")

@@ -85,33 +85,34 @@ python3 example_ollama_sdk.py
 ```text
 Response: Quantum computing uses the principles of quantum mechanics to process information...
 
-+--------------------------------------------------------+
-|           OLLAMA TOKEN & PERFORMANCE METRICS           |
-+--------------------------------------------------------+
-| Model Name           : qwen2.5:14b                      |
-| Architecture Family  : qwen2                            |
-| Parameter Size       : 14.8B                            |
-| Quantization Level   : Q4_K_M                           |
-| Vocabulary Size      : 151,646                          |
-| Max Context Window   : 32,768                           |
-| Default Ollama Ctx   : 2,048 tokens (num_ctx)           |
-+--------------------------------------------------------+
-| Input Character Length: 48 chars (7 words)              |
-| Input Tokens (Prompt)  : 39                             |
-| Input Efficiency     : 1.23 chars/token                |
-+--------------------------------------------------------+
-| Output Character Length: 335 chars (46 words)           |
-| Output Tokens (Result) : 55                             |
-| Output Efficiency    : 6.09 chars/token                |
-| Total Tokens          : 94                             |
-+--------------------------------------------------------+
-| Prompt Eval Duration : 245.50 ms                        |
-| Prompt Processing    : 158.86 t/s                       |
-| Response Duration    : 1.79 s                           |
-| Generation Speed       : 30.71 t/s                      |
-| Total Ollama Time    : 2.14 s                           |
-| Client Wall Clock    : 2.14 s                           |
-+--------------------------------------------------------+
++------------------------------------------------------------+
+|             OLLAMA TOKEN & PERFORMANCE METRICS             |
++------------------------------------------------------------+
+| Model Name           : qwen2.5:14b                         |
+| Architecture Family  : qwen2                               |
+| Parameter Size       : 14.8B                               |
+| Quantization Level   : Q4_K_M                              |
+| Vocabulary Size      : 151,646                             |
+| Training Date        : Sep 2024 (Cutoff: Sep 2024)         |
+| Max Context Window   : 32,768 tokens (~24,576 words)       |
+| Default Ollama Ctx   : 2,048 tokens (~1,536 words)         |
++------------------------------------------------------------+
+| Input Character Length: 48 chars (7 words)                 |
+| Input Tokens (Prompt)  : 39                                |
+| Input Efficiency     : 1.23 chars/token                   |
++------------------------------------------------------------+
+| Output Character Length: 335 chars (46 words)              |
+| Output Tokens (Result) : 55                                |
+| Output Efficiency    : 6.09 chars/token                   |
+| Total Tokens          : 94                                 |
++------------------------------------------------------------+
+| Prompt Eval Duration : 245.50 ms                           |
+| Prompt Processing    : 158.86 t/s                          |
+| Response Duration    : 1.79 s                              |
+| Generation Speed       : 30.71 t/s                         |
+| Total Ollama Time    : 2.14 s                              |
+| Client Wall Clock    : 2.14 s                              |
++------------------------------------------------------------+
 
 --- Input Token Number Mappings ---
 Prompt Length: 48 characters | 7 words
@@ -145,3 +146,9 @@ Ollama reports exact model statistics in its `/api/generate` and `/api/chat` end
 ### 🔍 Why Mapping Table Token Count May Differ from `prompt_eval_count`
 1. **Model Chat Templates**: Ollama automatically wraps prompts in model-specific control tags (e.g. `<|begin_of_text|>`, `<|start_header_id|>user<|end_header_id|>`), which adds extra tokens to `prompt_eval_count`.
 2. **Tokenizer Vocabulary**: Model-native tokenizers (used by Ollama and `ollama_native_token_counter.py`) split sub-words differently than general client encoders like `tiktoken` or whitespace splitters.
+
+---
+
+## 📄 License
+This project is open source and available under the [MIT License](LICENSE).
+

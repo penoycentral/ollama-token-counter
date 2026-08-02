@@ -49,6 +49,49 @@ def format_ns(ns):
     s = ms / 1000
     return f"{s:.2f} s"
 
+KNOWN_TRAINING_DATES = {
+    "qwen2.5": "Sep 2024 (Cutoff: Sep 2024)",
+    "qwen2": "Jun 2024",
+    "llama3.3": "Dec 2024 (Cutoff: Dec 2023)",
+    "llama3.2": "Sep 2024 (Cutoff: Dec 2023)",
+    "llama3.1": "Jul 2024 (Cutoff: Dec 2023)",
+    "llama3": "Apr 2024 (Cutoff: Mar 2023)",
+    "gemma2": "Jun 2024",
+    "gemma": "Feb 2024",
+    "phi3.5": "Aug 2024",
+    "phi3": "Apr 2024",
+    "mistral": "Sep 2023",
+    "mixtral": "Dec 2023",
+    "deepseek-r1": "Jan 2025",
+    "deepseek-v3": "Dec 2024",
+}
+
+import re
+
+def get_training_date(model_name, data):
+    """Determine training date / knowledge cutoff from model metadata or known model lookup."""
+    model_info = data.get("model_info", {})
+    # 1. Search GGUF metadata fields
+    for k, v in model_info.items():
+        if any(term in k.lower() for term in ["training_date", "created_at", "creation_date", "cutoff_date"]):
+            if v:
+                return str(v)
+    
+    # 2. Known model lookup based on model name or architecture/basename
+    basename = str(model_info.get("general.basename", "")).lower()
+    family = str(data.get("details", {}).get("family", "")).lower()
+    search_text = f"{model_name} {basename} {family}".lower()
+    
+    for key, date_str in KNOWN_TRAINING_DATES.items():
+        if key in search_text:
+            return date_str
+
+    # 3. Fallback to Ollama model modified_at timestamp if present
+    mod = data.get("modified_at")
+    if mod and len(mod) >= 10:
+        return f"Model Built: {mod[:10]}"
+    return "N/A"
+
 def get_model_info(host, model):
     """Fetch model details (family, parameter size, quantization, vocab size) via /api/show."""
     url = f"{host.rstrip('/')}/api/show"
@@ -76,13 +119,18 @@ def get_model_info(host, model):
             if vocab_size is None and token_ids:
                 vocab_size = max(token_ids) + 1
 
+            max_context_words = int(context_length * 0.75) if context_length is not None else None
+            training_date = get_training_date(model, data)
+
             return {
                 "family": details.get("family", model_info.get("general.architecture", "N/A")),
                 "parameter_size": details.get("parameter_size", model_info.get("general.size_label", "N/A")),
                 "quantization": details.get("quantization_level", "N/A"),
                 "format": details.get("format", "N/A"),
                 "vocab_size": vocab_size,
+                "training_date": training_date,
                 "context_length": context_length,
+                "max_context_words": max_context_words,
             }
     except Exception:
         return None
@@ -215,42 +263,52 @@ def run_token_count(prompt, model, host, system_prompt=None, stream=True):
     eval_speed = (output_tokens / (eval_duration / 1e9)) if eval_duration > 0 else 0
 
     # Display Metrics Summary Box
-    box_width = 56
+    box_width = 60
     line_sep = f"+{'-' * box_width}+"
 
     print(line_sep)
     print(f"| {BOLD}{MAGENTA}{'OLLAMA TOKEN & PERFORMANCE METRICS':^{box_width - 2}}{RESET} |")
     print(line_sep)
-    print(f"| Model Name           : {model:<32} |")
+    print(f"| Model Name           : {model:<35} |")
     if model_info:
         family_str = f"{model_info['family']}"
         param_str = f"{model_info['parameter_size']}"
         quant_str = f"{model_info['quantization']}"
         vocab_str = f"{model_info['vocab_size']:,}" if model_info['vocab_size'] else "N/A"
-        ctx_str = f"{model_info['context_length']:,}" if model_info['context_length'] else "N/A"
+        train_date = f"{model_info.get('training_date', 'N/A')}"
         
-        print(f"| Architecture Family  : {family_str:<32} |")
-        print(f"| Parameter Size       : {param_str:<32} |")
-        print(f"| Quantization Level   : {quant_str:<32} |")
-        print(f"| Vocabulary Size      : {vocab_str:<32} |")
-        print(f"| Max Context Window   : {ctx_str:<32} |")
-        print(f"| Default Ollama Ctx   : {'2,048 tokens (num_ctx)':<32} |")
+        ctx_len = model_info.get('context_length')
+        ctx_words = model_info.get('max_context_words')
+        if ctx_len:
+            ctx_str = f"{ctx_len:,} tokens (~{ctx_words:,} words)"
+        else:
+            ctx_str = "N/A"
+
+        default_ctx_str = "2,048 tokens (~1,536 words)"
+
+        print(f"| Architecture Family  : {family_str:<35} |")
+        print(f"| Parameter Size       : {param_str:<35} |")
+        print(f"| Quantization Level   : {quant_str:<35} |")
+        print(f"| Vocabulary Size      : {vocab_str:<35} |")
+        print(f"| Training Date        : {train_date:<35} |")
+        print(f"| Max Context Window   : {ctx_str:<35} |")
+        print(f"| Default Ollama Ctx   : {default_ctx_str:<35} |")
     print(line_sep)
-    print(f"| Input Character Length: {f'{input_chars:,} chars ({len(prompt.split()):,} words)':<31} |")
-    print(f"| {BOLD}{GREEN}Input Tokens (Prompt)  : {input_tokens:<32,}{RESET} |")
-    print(f"| Input Efficiency     : {f'{input_chars_per_token:.2f} chars/token':<31} |")
+    print(f"| Input Character Length: {f'{input_chars:,} chars ({len(prompt.split()):,} words)':<34} |")
+    print(f"| {BOLD}{GREEN}Input Tokens (Prompt)  : {input_tokens:<35,}{RESET} |")
+    print(f"| Input Efficiency     : {f'{input_chars_per_token:.2f} chars/token':<35} |")
     print(line_sep)
-    print(f"| Output Character Length: {f'{output_chars:,} chars ({len(response_text.split()):,} words)':<30} |")
-    print(f"| {BOLD}{GREEN}Output Tokens (Result) : {output_tokens:<32,}{RESET} |")
-    print(f"| Output Efficiency    : {f'{output_chars_per_token:.2f} chars/token':<31} |")
-    print(f"| {BOLD}Total Tokens          : {total_tokens:<32,}{RESET} |")
+    print(f"| Output Character Length: {f'{output_chars:,} chars ({len(response_text.split()):,} words)':<33} |")
+    print(f"| {BOLD}{GREEN}Output Tokens (Result) : {output_tokens:<35,}{RESET} |")
+    print(f"| Output Efficiency    : {f'{output_chars_per_token:.2f} chars/token':<35} |")
+    print(f"| {BOLD}Total Tokens          : {total_tokens:<35,}{RESET} |")
     print(line_sep)
-    print(f"| Prompt Eval Duration : {format_ns(prompt_eval_duration):<32} |")
-    print(f"| Prompt Processing    : {prompt_speed:<29.2f} t/s |")
-    print(f"| Response Duration    : {format_ns(eval_duration):<32} |")
-    print(f"| {BOLD}{YELLOW}Generation Speed       : {eval_speed:<29.2f} t/s{RESET} |")
-    print(f"| Total Ollama Time    : {format_ns(total_duration):<32} |")
-    print(f"| Client Wall Clock    : {f'{client_elapsed_s:.2f} s':<32} |")
+    print(f"| Prompt Eval Duration : {format_ns(prompt_eval_duration):<35} |")
+    print(f"| Prompt Processing    : {f'{prompt_speed:.2f} t/s':<35} |")
+    print(f"| Response Duration    : {format_ns(eval_duration):<35} |")
+    print(f"| {BOLD}{YELLOW}Generation Speed       : {f'{eval_speed:.2f} t/s':<35}{RESET} |")
+    print(f"| Total Ollama Time    : {format_ns(total_duration):<35} |")
+    print(f"| Client Wall Clock    : {f'{client_elapsed_s:.2f} s':<35} |")
     print(line_sep)
 
     # Display Token Mapping Breakdown Table

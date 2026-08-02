@@ -1,16 +1,24 @@
-# macOS system files
+# macOS / System files
 .DS_Store
 .AppleDouble
 .LSOverride
+Thumbs.db
 
 # Python build & bytecode artifacts
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
 
 # Environments & Dependencies
 .env
+.env.*
 .venv
 env/
 venv/
@@ -24,5 +32,6 @@ venv.bak/
 *.swp
 *.swo
 
-# Logs
+# Logs & Temporary files
 *.log
+*.tmp
